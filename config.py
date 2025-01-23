@@ -25,15 +25,6 @@ MONITOR_CONFIG = {
     }
 }
 
-# 日志配置
-LOG_CONFIG = {
-    'log_dir': 'logs',
-    'max_bytes': 10 * 1024 * 1024,  # 10MB
-    'backup_count': 5,
-    'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    'level': 'INFO'
-}
-
 # 进程管理配置
 PROCESS_CONFIG = {
     'health_check_interval': 60,  # 1分钟检查一次进程健康

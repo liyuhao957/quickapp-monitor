@@ -1,12 +1,10 @@
 import os
 import time
 import signal
-import logging
 import multiprocessing
-from logging.handlers import RotatingFileHandler
 from datetime import datetime
 
-from config import MONITOR_CONFIG, LOG_CONFIG, PROCESS_CONFIG
+from config import MONITOR_CONFIG, PROCESS_CONFIG
 from honorMonitor import HonorMonitor
 from huaweiJZQ import WebMonitor
 from huaweiSM import VersionMonitor
@@ -42,51 +40,22 @@ class MonitorManager:
     def __init__(self):
         self.processes = {}
         self.restart_counts = {}
-        self.setup_logging()
         self.running = True
-        self.logger = logging.getLogger('MonitorManager')
         
         # 设置信号处理
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
 
-    def setup_logging(self):
-        """设置日志系统"""
-        # 创建日志目录
-        os.makedirs(LOG_CONFIG['log_dir'], exist_ok=True)
-        
-        # 设置根日志记录器
-        root_logger = logging.getLogger()
-        root_logger.setLevel(LOG_CONFIG['level'])
-        
-        # 创建格式化器
-        formatter = logging.Formatter(LOG_CONFIG['format'])
-        
-        # 创建文件处理器
-        log_file = os.path.join(LOG_CONFIG['log_dir'], 'monitor_all.log')
-        file_handler = RotatingFileHandler(
-            log_file,
-            maxBytes=LOG_CONFIG['max_bytes'],
-            backupCount=LOG_CONFIG['backup_count']
-        )
-        file_handler.setFormatter(formatter)
-        root_logger.addHandler(file_handler)
-        
-        # 创建控制台处理器
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        root_logger.addHandler(console_handler)
-
     def handle_signal(self, signum, frame):
         """处理进程信号"""
-        self.logger.info(f"收到信号 {signum}，准备停止所有监控...")
+        print(f"收到信号 {signum}，准备停止所有监控...")
         self.running = False
         self.stop_all()
 
     def start_process(self, name, target_func, config):
         """启动单个监控进程"""
         if name in self.processes and self.processes[name].is_alive():
-            self.logger.warning(f"{name} 已经在运行")
+            print(f"{name} 已经在运行")
             return
 
         process = multiprocessing.Process(
@@ -98,11 +67,11 @@ class MonitorManager:
         process.start()
         self.processes[name] = process
         self.restart_counts[name] = 0
-        self.logger.info(f"{name} 启动成功 (PID: {process.pid})")
+        print(f"{name} 启动成功 (PID: {process.pid})")
 
     def start_all(self):
         """启动所有监控进程"""
-        self.logger.info("开始启动所有监控进程...")
+        print("开始启动所有监控进程...")
         
         # 启动荣耀快应用监控
         self.start_process(
@@ -130,30 +99,30 @@ class MonitorManager:
         if name in self.processes:
             process = self.processes[name]
             if process.is_alive():
-                self.logger.info(f"正在停止 {name}...")
+                print(f"正在停止 {name}...")
                 process.terminate()
                 process.join(timeout=5)
                 if process.is_alive():
-                    self.logger.warning(f"{name} 未响应，强制终止")
+                    print(f"{name} 未响应，强制终止")
                     process.kill()
             del self.processes[name]
-            self.logger.info(f"{name} 已停止")
+            print(f"{name} 已停止")
 
     def stop_all(self):
         """停止所有监控进程"""
-        self.logger.info("正在停止所有监控进程...")
+        print("正在停止所有监控进程...")
         for name in list(self.processes.keys()):
             self.stop_process(name)
-        self.logger.info("所有监控进程已停止")
+        print("所有监控进程已停止")
 
     def check_process_health(self):
         """检查进程健康状态"""
         for name, process in list(self.processes.items()):
             if not process.is_alive():
-                self.logger.warning(f"{name} 已停止运行")
+                print(f"{name} 已停止运行")
                 if PROCESS_CONFIG['restart_on_crash']:
                     if self.restart_counts[name] < PROCESS_CONFIG['max_restarts']:
-                        self.logger.info(f"正在重启 {name}...")
+                        print(f"正在重启 {name}...")
                         time.sleep(PROCESS_CONFIG['restart_delay'])
                         self.restart_counts[name] += 1
                         
@@ -170,11 +139,11 @@ class MonitorManager:
                         
                         self.start_process(name, target_func, config)
                     else:
-                        self.logger.error(f"{name} 重启次数超过限制，不再重试")
+                        print(f"{name} 重启次数超过限制，不再重试")
 
     def run(self):
         """运行监控管理器"""
-        self.logger.info("=== 监控管理器启动 ===")
+        print("=== 监控管理器启动 ===")
         self.start_all()
         
         try:
@@ -182,10 +151,10 @@ class MonitorManager:
                 self.check_process_health()
                 time.sleep(PROCESS_CONFIG['health_check_interval'])
         except KeyboardInterrupt:
-            self.logger.info("收到中断信号")
+            print("收到中断信号")
         finally:
             self.stop_all()
-            self.logger.info("=== 监控管理器已停止 ===")
+            print("=== 监控管理器已停止 ===")
 
 if __name__ == "__main__":
     manager = MonitorManager()
