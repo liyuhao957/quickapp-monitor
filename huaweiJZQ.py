@@ -67,7 +67,7 @@ class WebMonitor:
                     "header": {
                         "template": "blue",
                         "title": {
-                            "content": "快应用加载器更新通知",
+                            "content": "华为加载器更新通知",
                             "tag": "plain_text"
                         }
                     },
@@ -203,7 +203,7 @@ class WebMonitor:
                         "header": {
                             "template": "blue",
                             "title": {
-                                "content": "快应用加载器更新通知",
+                                "content": "华为加载器更新通知",
                                 "tag": "plain_text"
                             }
                         },
@@ -219,7 +219,7 @@ class WebMonitor:
                                         f"|  版本  | `{self.last_content['version']}` |\n"
                                         f"|  规范  | `{self.last_content['spec']}` |\n"
                                         f"|  文件  | `{self.last_content['text']}` |\n\n"
-                                        f"📥 下载链接：{self.last_content['url']}\n\n"
+                                        f"📥 [下载地址]({self.last_content['url']})\n\n"
                                         f"⏱️ 监控间隔：`{self.interval}秒`"
                                     )
                                 }
@@ -238,7 +238,7 @@ class WebMonitor:
                         "header": {
                             "template": "blue",
                             "title": {
-                                "content": "快应用加载器更新通知",
+                                "content": "华为加载器更新通知",
                                 "tag": "plain_text"
                             }
                         },
@@ -254,7 +254,7 @@ class WebMonitor:
                                         f"|  版本  | `{current_content['version']}` |\n"
                                         f"|  规范  | `{current_content['spec']}` |\n"
                                         f"|  文件  | `{current_content['text']}` |\n\n"
-                                        f"📥 下载链接：{current_content['url']}"
+                                        f"📥 [下载地址]({current_content['url']})"
                                     )
                                 }
                             }

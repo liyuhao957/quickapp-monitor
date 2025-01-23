@@ -179,7 +179,7 @@ class VersionMonitor:
                     "header": {
                         "template": "blue",
                         "title": {
-                            "content": "快应用版本说明更新通知",
+                            "content": "华为版本说明更新通知",
                             "tag": "plain_text"
                         }
                     },
