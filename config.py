@@ -31,4 +31,13 @@ PROCESS_CONFIG = {
     'restart_on_crash': True,     # 进程崩溃时自动重启
     'max_restarts': 3,            # 最大重启次数
     'restart_delay': 5            # 重启前等待时间（秒）
+}
+
+# 状态监控配置
+STATUS_MONITOR_CONFIG = {
+    'webhook_url': 'https://open.feishu.cn/open-apis/bot/v2/hook/dd7a3644-a1c7-457a-90af-9a72cc7e41bd',  # 状态监控机器人
+    'startup_notify': True,   # 是否发送启动通知
+    'shutdown_notify': True,  # 是否发送停止通知
+    'error_notify': True,    # 是否发送错误通知
+    'heartbeat_notify': True  # 是否发送心跳通知
 } 

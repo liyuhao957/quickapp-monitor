@@ -39,6 +39,11 @@
   - 异常自动重试
   - 完整的错误处理
   - 详细的日志记录
+- 进程管理
+  - 多进程并行监控
+  - 自动健康检查
+  - 进程崩溃自动重启
+  - 每日心跳检测
 
 ## 安装
 
@@ -58,18 +63,49 @@ pip install -r requirements.txt
 在 `config.py` 中配置以下参数：
 
 ```python
-# 飞书机器人 Webhook URLs
-HONOR_DEBUGGER_WEBHOOK = "your_webhook_url"
-HONOR_ENGINE_WEBHOOK = "your_webhook_url"
-HUAWEI_LOADER_WEBHOOK = "your_webhook_url"
-HUAWEI_VERSION_WEBHOOK = "your_webhook_url"
+# 监控配置
+MONITOR_CONFIG = {
+    # 荣耀快应用监控配置
+    'honor': {
+        'name': '荣耀快应用监控',
+        'debugger_webhook': "your_webhook_url",
+        'engine_webhook': "your_webhook_url",
+        'check_interval': 300  # 5分钟
+    },
+    
+    # 华为快应用加载器监控配置
+    'huawei_loader': {
+        'name': '华为快应用加载器监控',
+        'url': "your_monitor_url",
+        'webhook': "your_webhook_url",
+        'check_interval': 300
+    },
+    
+    # 华为快应用版本说明监控配置
+    'huawei_version': {
+        'name': '华为快应用版本监控',
+        'url': "your_monitor_url",
+        'webhook': "your_webhook_url",
+        'check_interval': 300
+    }
+}
 
-# 检查间隔（秒）
-CHECK_INTERVAL = 300  # 默认5分钟
+# 进程管理配置
+PROCESS_CONFIG = {
+    'health_check_interval': 60,  # 1分钟检查一次进程健康
+    'restart_on_crash': True,     # 进程崩溃时自动重启
+    'max_restarts': 3,            # 最大重启次数
+    'restart_delay': 5            # 重启前等待时间（秒）
+}
 
-# 监控开关
-ENABLE_HONOR_MONITOR = True
-ENABLE_HUAWEI_MONITOR = True
+# 状态监控配置
+STATUS_MONITOR_CONFIG = {
+    'webhook_url': 'your_webhook_url',  # 状态监控机器人
+    'startup_notify': True,   # 是否发送启动通知
+    'shutdown_notify': True,  # 是否发送停止通知
+    'error_notify': True,     # 是否发送错误通知
+    'heartbeat_notify': True  # 是否发送心跳通知
+}
 ```
 
 ## 使用方法
@@ -102,15 +138,38 @@ quickapp-monitor/
 ├── honorMonitor.py    # 荣耀快应用监控
 ├── huaweiJZQ.py      # 华为加载器监控
 ├── huaweiSM.py       # 华为版本监控
+├── status_monitor.py  # 状态监控服务
 ├── requirements.txt   # 项目依赖
 ├── docs/             # 文档目录
 │   └── TASK_TEMPLATE.md  # 任务模板
 └── .tasks/           # 任务记录
 ```
 
-## 开发记录
+## 开发指南
 
-详细的开发记录和任务进度可以在 `.tasks` 目录中查看，每个任务都按照 `docs/TASK_TEMPLATE.md` 的格式进行记录。
+### 代码规范
+- 使用 Python 3.7+ 
+- 遵循 PEP 8 编码规范
+- 所有函数和类必须有文档字符串
+- 关键代码需要添加注释
+
+### 异常处理
+- 使用 try-except 处理所有可能的异常
+- 实现重试机制处理临时性错误
+- 记录详细的错误信息
+- 发送错误通知到飞书群
+
+### 日志记录
+- 使用 Python 标准库 logging
+- 记录关键操作和错误信息
+- 定期清理日志文件
+- 支持不同级别的日志
+
+### 测试
+- 编写单元测试
+- 进行集成测试
+- 模拟各种异常情况
+- 测试飞书通知功能
 
 ## 更新日志
 
@@ -119,6 +178,9 @@ quickapp-monitor/
 - 优化了下载链接的显示方式
 - 改进了版本更新检测逻辑
 - 增强了错误处理机制
+- 添加了进程管理功能
+- 实现了心跳检测机制
+- 完善了配置管理系统
 
 ## 许可证
 

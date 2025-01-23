@@ -4,7 +4,8 @@ import signal
 import multiprocessing
 from datetime import datetime
 
-from config import MONITOR_CONFIG, PROCESS_CONFIG
+from config import MONITOR_CONFIG, PROCESS_CONFIG, STATUS_MONITOR_CONFIG
+from status_monitor import StatusMonitor
 from honorMonitor import HonorMonitor
 from huaweiJZQ import WebMonitor
 from huaweiSM import VersionMonitor
@@ -42,6 +43,9 @@ class MonitorManager:
         self.restart_counts = {}
         self.running = True
         
+        # 初始化状态监控
+        self.status_monitor = StatusMonitor(STATUS_MONITOR_CONFIG['webhook_url'])
+        
         # 设置信号处理
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
@@ -72,6 +76,10 @@ class MonitorManager:
     def start_all(self):
         """启动所有监控进程"""
         print("开始启动所有监控进程...")
+        
+        # 发送启动通知
+        if STATUS_MONITOR_CONFIG['startup_notify']:
+            self.status_monitor.send_startup_notification()
         
         # 启动荣耀快应用监控
         self.start_process(
@@ -113,48 +121,66 @@ class MonitorManager:
         print("正在停止所有监控进程...")
         for name in list(self.processes.keys()):
             self.stop_process(name)
+        
+        # 发送停止通知
+        if STATUS_MONITOR_CONFIG['shutdown_notify']:
+            self.status_monitor.send_shutdown_notification()
+        
         print("所有监控进程已停止")
 
     def check_process_health(self):
         """检查进程健康状态"""
-        for name, process in list(self.processes.items()):
-            if not process.is_alive():
-                print(f"{name} 已停止运行")
-                if PROCESS_CONFIG['restart_on_crash']:
-                    if self.restart_counts[name] < PROCESS_CONFIG['max_restarts']:
-                        print(f"正在重启 {name}...")
-                        time.sleep(PROCESS_CONFIG['restart_delay'])
-                        self.restart_counts[name] += 1
-                        
-                        # 根据进程名获取对应的运行函数和配置
-                        if name == 'honor':
-                            target_func = run_honor_monitor
-                            config = MONITOR_CONFIG['honor']
-                        elif name == 'huawei_loader':
-                            target_func = run_huawei_loader_monitor
-                            config = MONITOR_CONFIG['huawei_loader']
-                        elif name == 'huawei_version':
-                            target_func = run_huawei_version_monitor
-                            config = MONITOR_CONFIG['huawei_version']
-                        
-                        self.start_process(name, target_func, config)
-                    else:
-                        print(f"{name} 重启次数超过限制，不再重试")
+        try:
+            for name, process in list(self.processes.items()):
+                if not process.is_alive():
+                    error_msg = f"{name} 已停止运行"
+                    print(error_msg)
+                    
+                    # 发送错误通知
+                    if STATUS_MONITOR_CONFIG['error_notify']:
+                        self.status_monitor.send_error_notification(error_msg)
+                    
+                    if PROCESS_CONFIG['restart_on_crash']:
+                        if self.restart_counts[name] < PROCESS_CONFIG['max_restarts']:
+                            print(f"正在重启 {name}...")
+                            time.sleep(PROCESS_CONFIG['restart_delay'])
+                            self.restart_counts[name] += 1
+                            
+                            # 根据进程名获取对应的运行函数和配置
+                            if name == 'honor':
+                                target_func = run_honor_monitor
+                                config = MONITOR_CONFIG['honor']
+                            elif name == 'huawei_loader':
+                                target_func = run_huawei_loader_monitor
+                                config = MONITOR_CONFIG['huawei_loader']
+                            elif name == 'huawei_version':
+                                target_func = run_huawei_version_monitor
+                                config = MONITOR_CONFIG['huawei_version']
+                            
+                            self.start_process(name, target_func, config)
+                        else:
+                            error_msg = f"{name} 重启次数超过限制，不再重试"
+                            print(error_msg)
+                            if STATUS_MONITOR_CONFIG['error_notify']:
+                                self.status_monitor.send_error_notification(error_msg)
+            
+            # 检查是否需要发送心跳
+            if STATUS_MONITOR_CONFIG['heartbeat_notify'] and self.status_monitor.should_send_heartbeat():
+                self.status_monitor.send_heartbeat()
+                
+        except Exception as e:
+            error_msg = f"健康检查出错: {str(e)}"
+            print(error_msg)
+            if STATUS_MONITOR_CONFIG['error_notify']:
+                self.status_monitor.send_error_notification(error_msg)
 
     def run(self):
         """运行监控管理器"""
-        print("=== 监控管理器启动 ===")
         self.start_all()
         
-        try:
-            while self.running:
-                self.check_process_health()
-                time.sleep(PROCESS_CONFIG['health_check_interval'])
-        except KeyboardInterrupt:
-            print("收到中断信号")
-        finally:
-            self.stop_all()
-            print("=== 监控管理器已停止 ===")
+        while self.running:
+            self.check_process_health()
+            time.sleep(PROCESS_CONFIG['health_check_interval'])
 
 if __name__ == "__main__":
     manager = MonitorManager()
